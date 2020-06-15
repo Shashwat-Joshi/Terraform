@@ -4,12 +4,6 @@ provider "aws" {
   profile = "terraformUser"
 }
 
-// Creating Key Pair
-# resource "aws_key_pair" "key1" {
-#   key_name   = "terraform-key"
-#   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD3F6tyPEFEzV0LX3X8BsXdMsQz1x2cEikKDEY0aIj41qgxMCP/iteneqXSIFZBp5vizPvaoIR3Um9xK7PGoW8giupGn+EPuxIA4cDM4vzOqOkiMPhz5XK0whEjkVzTo4+S0puvDZuwIsdiW9mxhJc7tgBNL0cYlWSYVkz4G/fslNfRPW5mYAM49f4fhtxPb5ok4Q2Lg9dPKVHO/Bgeu5woMc7RY0p1ej6D4CKFE6lymSDJpW0YHX/wqE9+cfEauh7xZcG0q9t2ta6F6fmX0agvpFyZo8aFbXeUBr7osSCJNgvavWbM/06niWrOvYX2xwWdhXmXSrbX8ZbabVohBK41 shashwat2002joshi@gmail.com"
-# }
-
 // Creating Security group that allows Port 22 (ssh) and 80 (http)
 resource "aws_security_group" "allow_tls" {
   name        = "terraform-sg"
@@ -56,11 +50,13 @@ resource "aws_instance" "instance1" {
 
 
 // How to print values which Terraform is provided from AWS
+
 output "name" {
   value = aws_instance.instance1.availability_zone
 }
 
 // Saving the publicIP of instance for future usage
+  
 resource "null_resource" "null1" {
   provisioner "local-exec" {
     command = "echo ${aws_instance.instance1.public_ip} > publicIP.txt"
@@ -85,6 +81,7 @@ resource "null_resource" "null1" {
 }
 
 // Creating EBS volume
+  
 resource "aws_ebs_volume" "ebs1" {
   availability_zone = aws_instance.instance1.availability_zone
   size              = 1
@@ -95,6 +92,7 @@ resource "aws_ebs_volume" "ebs1" {
 }
 
 // Attaching EBS volume to the instance created above 
+  
 resource "aws_volume_attachment" "ebs_att" {
   device_name  = "/dev/xvdd"
   volume_id    = aws_ebs_volume.ebs1.id
@@ -105,6 +103,7 @@ resource "aws_volume_attachment" "ebs_att" {
 /* Formatting, mounting the EBS volume
 and Clearing up the /var/www/html folder to git clone the code
 */
+    
 resource "null_resource" "null2" {
   depends_on = [
     aws_volume_attachment.ebs_att,
@@ -125,21 +124,7 @@ resource "null_resource" "null2" {
   }
 }
 
-
-
-# resource "null_resource" "null3" {
-#   depends_on = [
-#     null_resource.null2,
-#   ]
-#   provisioner "local-exec" {
-#     command = "firefox ${aws_instance.instance1.public_ip}"
-#   }
-# }
-
-
-
-
-
+// Creating S3 bucket
 resource "aws_s3_bucket" "bucket" {
   bucket = "shashwat1234567"
   acl    = "private"
@@ -149,7 +134,8 @@ resource "aws_s3_bucket" "bucket" {
     Environment = "Dev"
   }
 }
-
+  
+// Downloading image from git
 resource "null_resource" "nullgit" {
   depends_on = [
     aws_s3_bucket.bucket,
@@ -159,6 +145,7 @@ resource "null_resource" "nullgit" {
   }
 }
 
+  // Uploading image to S3 bucket
 resource "aws_s3_bucket_object" "object" {
   depends_on = [
     null_resource.nullgit,
@@ -214,9 +201,3 @@ resource "aws_cloudfront_distribution" "CF1" {
     cloudfront_default_certificate = true
   }
 }
-
-
-output "final" {
-  value = "${aws_cloudfront_distribution.CF1.domain_name}"
-}
-
